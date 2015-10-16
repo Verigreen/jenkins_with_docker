@@ -4,12 +4,7 @@
 #
 #	Dockerfile for running
 # 	Jenkins on top of Tomcat (with
-# 	within a docker container.
-#
-#	## Maintainer(s)
-#
-#	Jonathan Rosado Lugo <jonathan.rosado-lugo@hpe.com>
-#	Ricardo Quintana <ricardo.quintana@hpe.com>
+# 	within a docker container plus some docker tools pre-installed.
 #
 #	## References
 #
@@ -19,7 +14,7 @@
 
 
 FROM ubuntu:14.04
-MAINTAINER Giovanni Matos
+MAINTAINER jonathan.rosado@hpe.com ricardo.quintana@hpe.com giovanni.matos@hpe.com
 
 # Version for jenkins
 # Update center for jenkins
@@ -47,9 +42,9 @@ RUN apt-get update && apt-get install -y git \
     python-lxml \
     sendmail
 
-RUN wget -q https://archive.apache.org/dist/tomcat/tomcat-${TOMCAT_MAJOR_VERSION}/v${TOMCAT_MINOR_VERSION}/bin/apache-tomcat-${TOMCAT_MINOR_VERSION}.tar.gz
-RUN wget -qO- https://archive.apache.org/dist/tomcat/tomcat-${TOMCAT_MAJOR_VERSION}/v${TOMCAT_MINOR_VERSION}/bin/apache-tomcat-${TOMCAT_MINOR_VERSION}.tar.gz.md5 | md5sum -c - 
-RUN curl --silent --show-error --retry 5 https://bootstrap.pypa.io/get-pip.py | python2.7 && \
+RUN wget -q https://archive.apache.org/dist/tomcat/tomcat-${TOMCAT_MAJOR_VERSION}/v${TOMCAT_MINOR_VERSION}/bin/apache-tomcat-${TOMCAT_MINOR_VERSION}.tar.gz && \
+    wget -qO- https://archive.apache.org/dist/tomcat/tomcat-${TOMCAT_MAJOR_VERSION}/v${TOMCAT_MINOR_VERSION}/bin/apache-tomcat-${TOMCAT_MINOR_VERSION}.tar.gz.md5 | md5sum -c - && \
+    curl --silent --show-error --retry 5 https://bootstrap.pypa.io/get-pip.py | python2.7 && \
     pip install pyyaml && \
     tar zxf apache-tomcat-*.tar.gz && \
     rm apache-tomcat-*.tar.gz && \
@@ -99,6 +94,7 @@ ADD default_jenkins_plugins.txt /usr/share/jenkins/plugins.txt
 RUN /usr/local/bin/plugins.sh /usr/share/jenkins/plugins.txt && > /usr/share/jenkins/plugins.txt
 
 
+ADD start_sendmail.sh /start_sendmail.sh
 
 # Add the default supervisor conf
 ADD supervisord.conf /etc/supervisor/conf.d/supervisord.conf
@@ -133,8 +129,11 @@ ADD pwencrypt /usr/bin/pwencrypt
 EXPOSE 8080 50000
 
 # install docker 1.6.2
+# install docker-compose 1.3.3
+RUN wget -qO- https://get.docker.com/ubuntu/ | sed -r 's/^apt-get install -y lxc-docker$/apt-get install -y lxc-docker-1.6.2/g' | sh && \
+    curl -L https://github.com/docker/compose/releases/download/1.3.3/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose && \
+    chmod +x /usr/local/bin/docker-compose
 
-RUN wget -qO- https://get.docker.com/ubuntu/ | sed -r 's/^apt-get install -y lxc-docker$/apt-get install -y lxc-docker-1.6.2/g' | sh
 
 # Run Tomcat, plugins.sh (to install the plugins)
 CMD ["/usr/bin/supervisord"]

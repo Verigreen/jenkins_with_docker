@@ -128,12 +128,21 @@ ADD pwencrypt /usr/bin/pwencrypt
 # Port 8080 will be used for the Jenkins web interface
 EXPOSE 8080 50000
 
-# install docker 1.6.2
-# install docker-compose 1.3.3
-RUN wget -qO- https://get.docker.com/ubuntu/ | sed -r 's/^apt-get install -y lxc-docker$/apt-get install -y lxc-docker-1.6.2/g' | sh && \
-    curl -L https://github.com/docker/compose/releases/download/1.3.3/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose && \
-    chmod +x /usr/local/bin/docker-compose
+# TODO: replace trusty and ubuntu with appropriate commands.
+ENV MY_DOCKER_VERSION=1.9.0-0~trusty \
+    MY_COMPOSE_VERSION=1.5.1
 
+RUN apt-get update && apt-get install -y apt-transport-https && \
+    apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D && \
+    echo "deb https://apt.dockerproject.org/repo ubuntu-trusty main" | tee /etc/apt/sources.list.d/docker.list && \
+    apt-get update && \
+    apt-get purge -y lxc-docker* && \
+    apt-cache policy docker-engine && \
+    apt-get install -y docker-engine=$MY_DOCKER_VERSION && \
+    rm -rf /tmp/docker-engine.deb && \
+    sudo apt-get clean && apt-get autoclean && apt-get autoremove && \
+    curl -L https://github.com/docker/compose/releases/download/${MY_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose && \
+    chmod +x /usr/local/bin/docker-compose
 
 # Run Tomcat, plugins.sh (to install the plugins)
 CMD ["/usr/bin/supervisord"]

@@ -28,4 +28,6 @@ build-pipeline-plugin:1.4.8
 clone-workspace-scm:0.6
 publish-over-ssh:2.23
 ssh-slaves:1.10
+analysis-core:1.54
+delivery-pipeline-plugin:0.9.7
 
